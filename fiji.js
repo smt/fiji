@@ -17,41 +17,38 @@
     var locSto = window.localStorage;
     var sesSto = window.sessionStorage;
 
+    var DEFAULT_TTL = 1000*60*60*24;
+    var DEFAULT_LONG_TTL = 1000*60*60*24*30;
+    var DEFAULT_NS = 'Fiji';
+
     /**
      * Creates a new Fiji object
      * @class Fiji
      * @param {Object} [options]
      */
     var Fiji = function Fiji(options) {
-        var _options = options;
-        if (!_options) {
-            _options = {};
-        }
-
         // Ensure this was called with the 'new' keyword
         if (!(this instanceof Fiji)) {
-            return new Fiji(_options);
+            return new Fiji(options);
         }
+
+        var _options = Object.create(null, {
+            ttl:     { value: (options && options.ttl) ?
+                              options.ttl : DEFAULT_TTL },
+            longTtl: { value: (options && options.longTtl) ?
+                              options.longTtl : DEFAULT_LONG_TTL },
+            ns:      { value: (options && options.ns) ?
+                              options.ns : DEFAULT_NS },
+            debug:   { value: options ? !!options.debug : false }
+        });
 
         /** @private {Object} */
         var _cache = {};
 
-        /** @private {Number} */
-        var TTL = _options.ttl || 1000*60*60*24;
-
-        /** @private {Number} */
-        var LONG_TTL = _options.longTtl || 1000*60*60*24*30;
-
-        /** @private {String} */
-        var NS = _options.ns || 'Fiji';
-
-        /** @private {Boolean} */
-        var DEBUG = _options.debug || false;
-
-        if (DEBUG) {
+        if (_options.debug) {
             console.log('Cleaning localStorage and sessionStorage (for testing only)');
-            locSto.removeItem(NS);
-            sesSto.removeItem(NS);
+            locSto.removeItem(_options.ns);
+            sesSto.removeItem(_options.ns);
         }
 
         /**
@@ -81,7 +78,7 @@
         */
         var calculateExpiresDate = function calculateExpiresDate(ttl, now) {
             var _now = (typeof now === 'object' && now.toDateString) ? now : new Date();
-            var _ttl = ttl || TTL;
+            var _ttl = ttl || _options.ttl;
             return new Date(_now.valueOf() + _ttl);
         };
 
@@ -99,7 +96,7 @@
             return {
                 id: key,
                 value: _value,
-                expires: calculateExpiresDate((isLongTerm ? TTL : LONG_TTL)),
+                expires: calculateExpiresDate((isLongTerm ? _options.ttl : _options.longTtl)),
                 isLongTerm: _isLongTerm
             };
         };
@@ -111,7 +108,7 @@
         */
         var getCacheItem = function getCacheItem(key) {
             if (!key) {
-                if (DEBUG) console.warn('Please provide a key');
+                if (_options.debug) console.warn('Please provide a key');
                 return;
             }
 
@@ -125,7 +122,7 @@
         */
         var setCacheItem = function setCacheItem(item) {
             if (!validateItem(item)) {
-                if (DEBUG) console.warn('Item was not set or properly formed: ', item);
+                if (_options.debug) console.warn('Item was not set or properly formed: ', item);
                 return;
             }
 
@@ -138,7 +135,7 @@
         */
         var deleteCacheItem = function deleteCacheItem(key) {
             if (!key) {
-                if (DEBUG) console.warn('Please provide a key');
+                if (_options.debug) console.warn('Please provide a key');
                 return;
             }
 
@@ -155,7 +152,7 @@
         */
         var getStoreItem = function getStoreItem(key) {
             if (!key) {
-                if (DEBUG) console.warn('Please provide a key');
+                if (_options.debug) console.warn('Please provide a key');
                 return;
             }
 
@@ -163,7 +160,7 @@
 
             // default to session storage
             var storeMechanism = (validateItem(item) && item.isLongTerm) ? locSto : sesSto;
-            var storeObj = JSON.parse(storeMechanism.getItem(NS));
+            var storeObj = JSON.parse(storeMechanism.getItem(_options.ns));
 
             if (!storeObj) {
                 return null;
@@ -180,19 +177,19 @@
         */
         var setStoreItem = function setStoreItem(item) {
             if (!validateItem(item)) {
-                if (DEBUG) console.warn('Item was not set or properly formed: ', item);
+                if (_options.debug) console.warn('Item was not set or properly formed: ', item);
                 return;
             }
 
             var storeMechanism = item.isLongTerm ? locSto : sesSto;
-            var storeObj = JSON.parse(storeMechanism.getItem(NS));
+            var storeObj = JSON.parse(storeMechanism.getItem(_options.ns));
 
             if (!storeObj) {
                 storeObj = {};
             }
             storeObj[item.id] = item;
 
-            storeMechanism.setItem(NS, JSON.stringify(storeObj));
+            storeMechanism.setItem(_options.ns, JSON.stringify(storeObj));
         };
 
         /**
@@ -201,24 +198,24 @@
         */
         var deleteStoreItem = function deleteStoreItem(key) {
             if (!key) {
-                if (DEBUG) console.warn('Please provide a key');
+                if (_options.debug) console.warn('Please provide a key');
                 return;
             }
 
             var item = _cache[key];
 
             if (!validateItem(item)) {
-                if (DEBUG) console.warn('Item was not set or properly formed: ', item);
+                if (_options.debug) console.warn('Item was not set or properly formed: ', item);
                 return;
             }
 
             var storeMechanism = item.isLongTerm ? locSto : sesSto;
-            var storeObj = JSON.parse(storeMechanism.getItem(NS));
+            var storeObj = JSON.parse(storeMechanism.getItem(_options.ns));
 
             storeObj[item.id] = null;
             delete storeObj[item.id];
 
-            storeMechanism.setItem(NS, JSON.stringify(storeObj));
+            storeMechanism.setItem(_options.ns, JSON.stringify(storeObj));
         };
 
         /**
@@ -228,7 +225,7 @@
         */
         var isExpired = function isExpired(item) {
             if (!item) {
-                if (DEBUG) console.warn('Please provide an item');
+                if (_options.debug) console.warn('Please provide an item');
                 return;
             }
 
@@ -257,7 +254,7 @@
                 setCacheItem(storeObj);
                 item = getCacheItem(key);
 
-                if (DEBUG) {
+                if (_options.debug) {
                     console.log('Initialized new cache item because blank "' + key + '"');
                     console.table(_cache);
                 }
@@ -269,25 +266,25 @@
                 if (validateItem(storeObj)) {
                     item.value = storeObj.value;
                 }
-                item.expires = calculateExpiresDate((item.isLongTerm ? TTL : LONG_TTL));
+                item.expires = calculateExpiresDate((item.isLongTerm ? _options.ttl : _options.longTtl));
                 setStoreItem(item);
                 setCacheItem(item);
 
-                if (DEBUG) {
+                if (_options.debug) {
                     console.log('Updated cache item because expired "' + key + '" (' + item.value + ')');
                     console.table(_cache);
                 }
 
             } else {
 
-                if (DEBUG) {
+                if (_options.debug) {
                     console.log('No cache init or update required, our data is still fresh.');
                     console.table(_cache);
                 }
 
             }
 
-            if (DEBUG) console.log('It is now ' + now.toString() + ' and _cache[' + key + '] expires at ', item.expires.toString());
+            if (_options.debug) console.log('It is now ' + now.toString() + ' and _cache[' + key + '] expires at ', item.expires.toString());
 
             return item.value;
         };
@@ -305,7 +302,7 @@
             if (!item) {
 
                 item = createNewItem(key, value, isLongTerm);
-                if (DEBUG) {
+                if (_options.debug) {
                     console.log('Initialized new cache item because blank "' + key + '"');
                     console.table(_cache);
                 }
@@ -313,8 +310,8 @@
             } else {
 
                 item.value = value;
-                item.expires = calculateExpiresDate((isLongTerm ? TTL : LONG_TTL));
-                if (DEBUG) {
+                item.expires = calculateExpiresDate((item.isLongTerm ? _options.ttl : _options.longTtl));
+                if (_options.debug) {
                     console.log('Updated existing cache item "' + key + '" (' + value + ') : ' + now.toString());
                     console.table(_cache);
                 }
@@ -340,11 +337,11 @@
         this.del = function del(key, confirmDeleteAll) {
             // Provide the means to wipe the whole slate clean if desired.
             if (!key && confirmDeleteAll) {
-                sesSto.removeItem(NS);
-                locSto.removeItem(NS);
+                sesSto.removeItem(_options.ns);
+                locSto.removeItem(_options.ns);
                 _cache = null;
                 _cache = {};
-                if (DEBUG) console.log('Nuked the Fiji, kaboom!');
+                if (_options.debug) console.log('Nuked the Fiji, kaboom!');
                 return;
             }
 
