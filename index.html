@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Fiji Example</title>
+    <script src="fiji.js"></script>
+</head>
+
+<body>
+<script type="text/javascript">
+    var fiji = new Fiji({ttl:2000, longTtl:2000, debug:true})
+
+    setTimeout(function () {
+        console.log('--- Getting SESSION STORAGE initial poop')
+        fiji.get('poop') }, 1000)
+    setTimeout(function () {
+        console.log('--- Setting SESSION STORAGE poop to fart')
+        fiji.set('poop', 'fart') }, 1100)
+    setTimeout(function () {
+        console.log('--- Getting SESSION STORAGE poop within cache expire time')
+        fiji.get('poop') }, 2000)
+    setTimeout(function () {
+        console.log('--- Getting SESSION STORAGE poop after cache expire time')
+        fiji.get('poop') }, 3200)
+    setTimeout(function () {
+        console.log('--- Setting SESSION STORAGE poop to null')
+        fiji.set('poop', null) }, 3900)
+    setTimeout(function () {
+        console.log('--- Getting SESSION STORAGE poop within cache expire time')
+        fiji.get('poop') }, 4000)
+    setTimeout(function () {
+        console.log('--- Getting SESSION STORAGE poop after cache expire time')
+        fiji.get('poop') }, 6000)
+
+    setTimeout(function () {
+        console.log('--- Getting LOCAL STORAGE initial foo')
+        fiji.get('foo') }, 7000)
+    setTimeout(function () {
+        console.log('--- Setting LOCAL STORAGE foo to bar')
+        fiji.set('foo', 'bar', true) }, 7100)
+    setTimeout(function () {
+        console.log('--- Getting LOCAL STORAGE foo within cache expire time')
+        fiji.get('foo') }, 8000)
+    setTimeout(function () {
+        console.log('--- Getting LOCAL STORAGE foo after cache expire time')
+        fiji.get('foo') }, 11200)
+    setTimeout(function () {
+        console.log('--- Setting LOCAL STORAGE foo to null')
+        fiji.set('foo', null, true) }, 11900)
+    setTimeout(function () {
+        console.log('--- Getting LOCAL STORAGE foo within cache expire time')
+        fiji.get('foo') }, 13000)
+    setTimeout(function () {
+        console.log('--- Getting LOCAL STORAGE foo after cache expire time')
+        fiji.get('foo') }, 16000)
+</script>
+</body>
+
+</html>
