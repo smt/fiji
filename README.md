@@ -1,7 +1,7 @@
 fiji.js
 =======
 
-Fiji is a lightweight library for proxying localStorage and sessionStorage. Since we know accessing these storage mechanisms is slow, one way to realize a performance gain is to access a native JS data structure most of the time, only going back to the well if the data is considered old.
+Fiji is a lightweight library for proxying localStorage and sessionStorage. Since we know accessing these storage mechanisms is [slower than accessing object properties](http://jsperf.com/localstorage-vs-objects/26), one way to realize a small performance gain, as well as introduce some caching logic, is to access a native JS data structure most of the time, only going back to sessionStorage or localStorage if the data in our object is considered stale.
 
 This library is more of a thought experiment than a tool that is inherently useful. However, Fiji is free to use as is. Constructive feedback and suggestions are most welcome.
 
@@ -33,6 +33,8 @@ Cache objects are stored internally with the following structure:
 This an object for sessionStorage. The only difference for a localStorage object is that the `isLongTerm` property would have been set to true.
 
 Internally, cache objects are serialized with `JSON.stringify` prior to being saved to sessionStorage/localStorage, and de-serialized with `JSON.parse` immediately after retrieval.
+
+Cache objects are saved atomically to storage under a common namespace (`Fiji` by default).
 
 API
 ---
