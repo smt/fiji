@@ -1,9 +1,22 @@
-(function (window, document, undefined) {
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(function () {
+            return (root.Fiji = factory());
+        });
+    } else if (typeof exports === 'object') {
+        // Node.js
+        module.exports = root.Fiji = factory();
+    } else {
+        // Browser globals
+        root.Fiji = factory();
+    }
+}(this, function() {
     "use strict";
 
     var _cache;
-    var _local = window.localStorage;
-    var _session = window.sessionStorage;
+    var _local = this.localStorage;
+    var _session = this.sessionStorage;
 
     /**
      * Validate a well-formed cache/storage object (used internally).
@@ -333,6 +346,6 @@
         this._deleteCacheItem(key)
     };
 
-    return window.Fiji = Fiji;
+    return Fiji;
 
-}(this, this.document));
+}));
