@@ -14,27 +14,8 @@
 }(this, function() {
     "use strict";
 
-    var _cache;
-    var _local = this.localStorage;
-    var _session = this.sessionStorage;
-
-    /**
-     * Validate a well-formed cache/storage object (used internally).
-     * @function
-     * @param {Object} item
-     * @returns {Boolean}
-     */
-    var validateItem = function validateItem(item) {
-        return (item &&
-                item.hasOwnProperty('id') &&
-                item.hasOwnProperty('value') &&
-                item.hasOwnProperty('expires') &&
-                item.hasOwnProperty('isLongTerm') &&
-         typeof item.id         !== 'undefined' &&
-         typeof item.value      !== 'undefined' &&
-         typeof item.expires    !== 'undefined' &&
-         typeof item.isLongTerm !== 'undefined')
-    };
+    var locSto = window.localStorage;
+    var sesSto = window.sessionStorage;
 
     /**
      * Creates a new Fiji object
@@ -49,301 +30,329 @@
 
         // Ensure this was called with the 'new' keyword
         if (!(this instanceof Fiji)) {
-            return new Fiji(options);
+            return new Fiji(_options);
         }
 
-        if (_cache) {
-            console.warn('There can only be one Fiji cache');
-            return this;
-        }
+        /** @private {Object} */
+        var _cache = {};
 
-        _cache = {};
+        /** @private {Number} */
+        var TTL = _options.ttl || 1000*60*60*24;
 
-        /** @member {Number} */
-        this.ttl = _options.ttl || 1000*60*60*24;
+        /** @private {Number} */
+        var LONG_TTL = _options.longTtl || 1000*60*60*24*30;
 
-        /** @member {Number} */
-        this.longTtl = _options.longTtl || 1000*60*60*24*30;
+        /** @private {String} */
+        var NS = _options.ns || 'Fiji';
 
-        /** @member {String} */
-        this.ns = _options.ns || 'Fiji';
+        /** @private {Boolean} */
+        var DEBUG = _options.debug || false;
 
-        if (_options.debug) {
+        if (DEBUG) {
             console.log('Cleaning localStorage and sessionStorage (for testing only)');
-            _local.removeItem(this.ns);
-            _session.removeItem(this.ns);
+            locSto.removeItem(NS);
+            sesSto.removeItem(NS);
         }
-    };
 
-    /**
-     * Add a TTL value to a date and return a new date to use as expiry value.
-     * @private
-     * @param {Number} [ttl]
-     * @param {Date} [now]
-     * @returns {Date}
-     */
-    Fiji.prototype._calculateExpiresDate = function _getNewExpiresDate(ttl, now) {
-        var _now = (typeof now === 'object' && now.toDateString) ? now : new Date();
-        var _ttl = ttl || this.ttl;
-        return new Date(_now.valueOf() + _ttl);
-    };
-
-    /**
-     * Create a new well-formed cache/storage object (used internally).
-     * @private
-     * @param {String} key
-     * @param {*} value
-     * @param {Boolean} [isLongTerm]
-     * @returns {Object}
-     */
-    Fiji.prototype._createNewItem = function _createNewItem(key, value, isLongTerm) {
-        var _value = (typeof value === 'undefined') ? null : value;
-        var _isLongTerm = !!isLongTerm;
-        return {
-            id: key,
-            value: _value,
-            expires: this._calculateExpiresDate((isLongTerm ? this.ttl : this.longTtl)),
-            isLongTerm: _isLongTerm
+        /**
+        * Validate a well-formed cache/storage object (used internally).
+        * @private
+        * @param {Object} item
+        * @returns {Boolean}
+        */
+        var validateItem = function validateItem(item) {
+            return (item &&
+                    item.hasOwnProperty('id') &&
+                    item.hasOwnProperty('value') &&
+                    item.hasOwnProperty('expires') &&
+                    item.hasOwnProperty('isLongTerm') &&
+            typeof item.id         !== 'undefined' &&
+            typeof item.value      !== 'undefined' &&
+            typeof item.expires    !== 'undefined' &&
+            typeof item.isLongTerm !== 'undefined')
         };
-    };
 
-    /**
-     * @private
-     * @param {String} key
-     * @returns {Object}
-     */
-    Fiji.prototype._getCacheItem = function _getCacheItem(key) {
-        if (!key) {
-            console.warn('Please provide a key');
-            return;
-        }
+        /**
+        * Add a TTL value to a date and return a new date to use as expiry value.
+        * @private
+        * @param {Number} [ttl]
+        * @param {Date} [now]
+        * @returns {Date}
+        */
+        var calculateExpiresDate = function calculateExpiresDate(ttl, now) {
+            var _now = (typeof now === 'object' && now.toDateString) ? now : new Date();
+            var _ttl = ttl || TTL;
+            return new Date(_now.valueOf() + _ttl);
+        };
 
-        var item = _cache[key];
-        return validateItem(item) ? item : null;
-    };
+        /**
+        * Create a new well-formed cache/storage object (used internally).
+        * @private
+        * @param {String} key
+        * @param {*} value
+        * @param {Boolean} [isLongTerm]
+        * @returns {Object}
+        */
+        var createNewItem = function createNewItem(key, value, isLongTerm) {
+            var _value = (typeof value === 'undefined') ? null : value;
+            var _isLongTerm = !!isLongTerm;
+            return {
+                id: key,
+                value: _value,
+                expires: calculateExpiresDate((isLongTerm ? TTL : LONG_TTL)),
+                isLongTerm: _isLongTerm
+            };
+        };
 
-    /**
-     * @private
-     * @param {Object} item
-     */
-    Fiji.prototype._setCacheItem = function _setCacheItem(item) {
-        if (!validateItem(item)) {
-            console.warn('Item was not set or properly formed: ', item);
-            return;
-        }
+        /**
+        * @private
+        * @param {String} key
+        * @returns {Object}
+        */
+        var getCacheItem = function getCacheItem(key) {
+            if (!key) {
+                if (DEBUG) console.warn('Please provide a key');
+                return;
+            }
 
-        _cache[item.id] = item;
-    };
+            var item = _cache[key];
+            return validateItem(item) ? item : null;
+        };
 
-    /**
-     * @private
-     * @param {String} key
-     */
-    Fiji.prototype._deleteCacheItem = function _deleteCacheItem(key) {
-        if (!key) {
-            console.warn('Please provide a key');
-            return;
-        }
+        /**
+        * @private
+        * @param {Object} item
+        */
+        var setCacheItem = function setCacheItem(item) {
+            if (!validateItem(item)) {
+                if (DEBUG) console.warn('Item was not set or properly formed: ', item);
+                return;
+            }
 
-        if (typeof _cache[key] !== 'undefined') {
-            _cache[key] = null;
-            delete _cache[key];
-        }
-    };
+            _cache[item.id] = item;
+        };
 
-    /**
-     * @private
-     * @param {String} key
-     * @returns {Object}
-     */
-    Fiji.prototype._getStoreItem = function _getStoreItem(key) {
-        if (!key) {
-            console.warn('Please provide a key');
-            return;
-        }
+        /**
+        * @private
+        * @param {String} key
+        */
+        var deleteCacheItem = function deleteCacheItem(key) {
+            if (!key) {
+                if (DEBUG) console.warn('Please provide a key');
+                return;
+            }
 
-        var item = _cache[key];
+            if (typeof _cache[key] !== 'undefined') {
+                _cache[key] = null;
+                delete _cache[key];
+            }
+        };
 
-        // default to session storage
-        var storeMechanism = (validateItem(item) && item.isLongTerm) ? _local : _session;
-        var storeObj = JSON.parse(storeMechanism.getItem(this.ns));
+        /**
+        * @private
+        * @param {String} key
+        * @returns {Object}
+        */
+        var getStoreItem = function getStoreItem(key) {
+            if (!key) {
+                if (DEBUG) console.warn('Please provide a key');
+                return;
+            }
 
-        if (!storeObj) {
-            return null;
-        }
+            var item = _cache[key];
 
-        item = (typeof storeObj[key] === 'undefined') ? null : storeObj[key];
+            // default to session storage
+            var storeMechanism = (validateItem(item) && item.isLongTerm) ? locSto : sesSto;
+            var storeObj = JSON.parse(storeMechanism.getItem(NS));
 
-        return item;
-    };
-
-    /**
-     * @private
-     * @param {Object} item
-     */
-    Fiji.prototype._setStoreItem = function _setStoreItem(item) {
-        if (!validateItem(item)) {
-            console.warn('Item was not set or properly formed: ', item);
-            return;
-        }
-
-        var storeMechanism = item.isLongTerm ? _local : _session;
-        var storeObj = JSON.parse(storeMechanism.getItem(this.ns));
-
-        if (!storeObj) {
-            storeObj = {};
-        }
-        storeObj[item.id] = item;
-
-        storeMechanism.setItem(this.ns, JSON.stringify(storeObj));
-    };
-
-    /**
-     * @private
-     * @param {String} key
-     */
-    Fiji.prototype._deleteStoreItem = function _deleteStoreItem(key) {
-        if (!key) {
-            console.warn('Please provide a key');
-            return;
-        }
-
-        var item = _cache[key];
-
-        if (!validateItem(item)) {
-            console.warn('Item was not set or properly formed: ', item);
-            return;
-        }
-
-        var storeMechanism = item.isLongTerm ? _local : _session;
-        var storeObj = JSON.parse(storeMechanism.getItem(this.ns));
-
-        storeObj[item.id] = null;
-        delete storeObj[item.id];
-
-        storeMechanism.setItem(this.ns, JSON.stringify(storeObj));
-    };
-
-    /**
-     * @private
-     * @param {Object} item
-     * @returns {Boolean}
-     */
-    Fiji.prototype._isExpired = function _isExpired(item) {
-        if (!item) {
-            console.warn('Please provide an item');
-            return;
-        }
-
-        var now = new Date();
-
-        return new Date(item.expires.valueOf()) < now;
-    };
-
-    /**
-     * @method
-     * @param {String} key
-     * @returns {*}
-     */
-    Fiji.prototype.get = function get(key) {
-        var now = new Date();
-        var storeObj;
-        var item = this._getCacheItem(key);
-
-        if (!item) {
-
-            // prime cache
-            storeObj = this._getStoreItem(key);
             if (!storeObj) {
-                storeObj = this._createNewItem(key, null);
+                return null;
             }
-            this._setCacheItem(storeObj);
-            item = this._getCacheItem(key);
 
-            console.log('Initialized new cache item because blank "' + key + '"');
-            console.table(_cache);
+            item = (typeof storeObj[key] === 'undefined') ? null : storeObj[key];
 
-        } else if (this._isExpired(item)) {
+            return item;
+        };
 
-            // refresh expired cached item from storage
-            storeObj = this._getStoreItem(key);
-            if (validateItem(storeObj)) {
-                item.value = storeObj.value;
+        /**
+        * @private
+        * @param {Object} item
+        */
+        var setStoreItem = function setStoreItem(item) {
+            if (!validateItem(item)) {
+                if (DEBUG) console.warn('Item was not set or properly formed: ', item);
+                return;
             }
-            item.expires = this._calculateExpiresDate((item.isLongTerm ? this.ttl : this.longTtl));
-            this._setStoreItem(item);
-            this._setCacheItem(item);
 
-            console.log('Updated cache item because expired "' + key + '" (' + item.value + ')');
-            console.table(_cache);
+            var storeMechanism = item.isLongTerm ? locSto : sesSto;
+            var storeObj = JSON.parse(storeMechanism.getItem(NS));
 
-        } else {
+            if (!storeObj) {
+                storeObj = {};
+            }
+            storeObj[item.id] = item;
 
-            console.log('No cache init or update required, our data is still fresh.');
-            console.table(_cache);
+            storeMechanism.setItem(NS, JSON.stringify(storeObj));
+        };
 
-        }
+        /**
+        * @private
+        * @param {String} key
+        */
+        var deleteStoreItem = function deleteStoreItem(key) {
+            if (!key) {
+                if (DEBUG) console.warn('Please provide a key');
+                return;
+            }
 
-        console.log('It is now ' + now.toString() + ' and _cache[' + key + '] expires at ', item.expires.toString());
+            var item = _cache[key];
 
-        return item.value;
-    };
+            if (!validateItem(item)) {
+                if (DEBUG) console.warn('Item was not set or properly formed: ', item);
+                return;
+            }
 
-    /**
-     * @method
-     * @param {String} key
-     * @param {*} value
-     * @param {Boolean} [isLongTerm]
-     */
-    Fiji.prototype.set = function set(key, value, isLongTerm) {
-        var now = new Date();
-        var item = this._getCacheItem(key);
+            var storeMechanism = item.isLongTerm ? locSto : sesSto;
+            var storeObj = JSON.parse(storeMechanism.getItem(NS));
 
-        if (!item) {
+            storeObj[item.id] = null;
+            delete storeObj[item.id];
 
-            item = this._createNewItem(key, value, isLongTerm);
-            console.log('Initialized new cache item because blank "' + key + '"');
-            console.table(_cache);
+            storeMechanism.setItem(NS, JSON.stringify(storeObj));
+        };
 
-        } else {
+        /**
+        * @private
+        * @param {Object} item
+        * @returns {Boolean}
+        */
+        var isExpired = function isExpired(item) {
+            if (!item) {
+                if (DEBUG) console.warn('Please provide an item');
+                return;
+            }
 
-            item.value = value;
-            item.expires = this._calculateExpiresDate((isLongTerm ? this.ttl : this.longTtl));
-            console.log('Updated existing cache item "' + key + '" (' + value + ') : ' + now.toString());
-            console.table(_cache);
+            var now = new Date();
 
-        }
+            return new Date(item.expires.valueOf()) < now;
+        };
 
-        // Ensure we never save the same key to two different types of storage.
-        // If a different isLongTerm option is passed, delete the existing storage item.
-        if (item.isLongTerm !== !!isLongTerm) {
-            this._deleteStoreItem(key);
-            item.isLongTerm = isLongTerm;
-        }
+        /**
+        * @method
+        * @param {String} key
+        * @returns {*}
+        */
+        this.get = function get(key) {
+            var now = new Date();
+            var storeObj;
+            var item = getCacheItem(key);
 
-        this._setStoreItem(item);
-        this._setCacheItem(item);
-    };
+            if (!item) {
 
-    /**
-     * @method
-     * @param {String} key
-     * @param {Boolean} [confirmDeleteAll]
-     */
-    Fiji.prototype.del = function del(key, confirmDeleteAll) {
-        // Provide the means to wipe the whole slate clean if desired.
-        if (!key && confirmDeleteAll) {
-            _session.removeItem(this.ns);
-            _local.removeItem(this.ns);
-            _cache = null;
-            _cache = {};
-            console.log('Nuked the Fiji, kaboom!');
-            return;
-        }
+                // prime cache
+                storeObj = getStoreItem(key);
+                if (!storeObj) {
+                    storeObj = createNewItem(key, null);
+                }
+                setCacheItem(storeObj);
+                item = getCacheItem(key);
 
-        // Important to delete store item first so that the storage mechanism, if any, can be determined
-        this._deleteStoreItem(key)
-        this._deleteCacheItem(key)
+                if (DEBUG) {
+                    console.log('Initialized new cache item because blank "' + key + '"');
+                    console.table(_cache);
+                }
+
+            } else if (isExpired(item)) {
+
+                // refresh expired cached item from storage
+                storeObj = getStoreItem(key);
+                if (validateItem(storeObj)) {
+                    item.value = storeObj.value;
+                }
+                item.expires = calculateExpiresDate((item.isLongTerm ? TTL : LONG_TTL));
+                setStoreItem(item);
+                setCacheItem(item);
+
+                if (DEBUG) {
+                    console.log('Updated cache item because expired "' + key + '" (' + item.value + ')');
+                    console.table(_cache);
+                }
+
+            } else {
+
+                if (DEBUG) {
+                    console.log('No cache init or update required, our data is still fresh.');
+                    console.table(_cache);
+                }
+
+            }
+
+            if (DEBUG) console.log('It is now ' + now.toString() + ' and _cache[' + key + '] expires at ', item.expires.toString());
+
+            return item.value;
+        };
+
+        /**
+        * @method
+        * @param {String} key
+        * @param {*} value
+        * @param {Boolean} [isLongTerm]
+        */
+        this.set = function set(key, value, isLongTerm) {
+            var now = new Date();
+            var item = getCacheItem(key);
+
+            if (!item) {
+
+                item = createNewItem(key, value, isLongTerm);
+                if (DEBUG) {
+                    console.log('Initialized new cache item because blank "' + key + '"');
+                    console.table(_cache);
+                }
+
+            } else {
+
+                item.value = value;
+                item.expires = calculateExpiresDate((isLongTerm ? TTL : LONG_TTL));
+                if (DEBUG) {
+                    console.log('Updated existing cache item "' + key + '" (' + value + ') : ' + now.toString());
+                    console.table(_cache);
+                }
+
+            }
+
+            // Ensure we never save the same key to two different types of storage.
+            // If a different isLongTerm option is passed, delete the existing storage item.
+            if (item.isLongTerm !== !!isLongTerm) {
+                deleteStoreItem(key);
+                item.isLongTerm = isLongTerm;
+            }
+
+            setStoreItem(item);
+            setCacheItem(item);
+        };
+
+        /**
+        * @method
+        * @param {String} key
+        * @param {Boolean} [confirmDeleteAll]
+        */
+        this.del = function del(key, confirmDeleteAll) {
+            // Provide the means to wipe the whole slate clean if desired.
+            if (!key && confirmDeleteAll) {
+                sesSto.removeItem(NS);
+                locSto.removeItem(NS);
+                _cache = null;
+                _cache = {};
+                if (DEBUG) console.log('Nuked the Fiji, kaboom!');
+                return;
+            }
+
+            // Important to delete store item first so that the storage mechanism, if any, can be determined
+            deleteStoreItem(key)
+            deleteCacheItem(key)
+        };
+
     };
 
     return Fiji;
