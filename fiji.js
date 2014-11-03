@@ -20,6 +20,7 @@
     var DEFAULT_TTL = 1000*60*60*24;
     var DEFAULT_LONG_TTL = 1000*60*60*24*30;
     var DEFAULT_NS = 'Fiji';
+    var DEFAULT_DEBUG = false;
 
     /**
      * Creates a new Fiji object
@@ -32,6 +33,7 @@
             return new Fiji(options);
         }
 
+        /** @private {Object} */
         var _options = Object.create(null, {
             ttl:     { value: (options && options.ttl) ?
                               options.ttl : DEFAULT_TTL },
@@ -39,7 +41,7 @@
                               options.longTtl : DEFAULT_LONG_TTL },
             ns:      { value: (options && options.ns) ?
                               options.ns : DEFAULT_NS },
-            debug:   { value: options ? !!options.debug : false }
+            debug:   { value: options ? !!options.debug : DEFAULT_DEBUG }
         });
 
         /** @private {Object} */
@@ -348,6 +350,25 @@
             // Important to delete store item first so that the storage mechanism, if any, can be determined
             deleteStoreItem(key)
             deleteCacheItem(key)
+        };
+
+        /**
+        * @method
+        */
+        this.list = function list() {
+            var valuesObj = {};
+            var keys = this.keys();
+            for (var i = 0; i < keys.length; i++) {
+                valuesObj[keys[i]] = this.get(keys[i]);
+            }
+            return valuesObj;
+        };
+
+        /**
+        * @method
+        */
+        this.keys = function keys() {
+            return Object.keys(_cache);
         };
 
     };

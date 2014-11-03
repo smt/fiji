@@ -43,7 +43,7 @@ Once you have created an instance of Fiji, referred to henceforth as **fiji**, y
 
 ### fiji.get(key)
 
-Returns the value of a cache object with the given key/id.
+Returns the value of a cache object with the given key/id. If the data is determined to be expired, the appropriate storage mechanism will be queried.
 
 ### fiji.set(key, value, [isLongTerm])
 
@@ -52,3 +52,11 @@ Sets the value of a cache object with the given key/id, and optionally, the `isL
 ### fiji.del(key, [confirmDeleteAll])
 
 Deletes the cache object with the given key/id, as well as its sessionStorage/localStorage cousin. If `true` is passed as the optional second argument, the entire Fiji cache is reset.
+
+### fiji.list()
+
+Returns an object representation of all cached key/value pairs. Uses `fiji.keys` and `fiji.get` to retrieve a dataset of appropriate freshness.
+
+### fiji.keys()
+
+Returns an array of all cache keys.
