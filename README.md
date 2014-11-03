@@ -32,6 +32,8 @@ Cache objects are stored internally with the following structure:
 
 This an object for sessionStorage. The only difference for a localStorage object is that the `isLongTerm` property would have been set to true.
 
+Internally, cache objects are serialized with `JSON.stringify` prior to being saved to sessionStorage/localStorage, and de-serialized with `JSON.parse` immediately after retrieval.
+
 API
 ---
 
