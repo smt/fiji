@@ -357,18 +357,11 @@
         */
         this.list = function list() {
             var valuesObj = {};
-            var keys = this.keys();
+            var keys = Object.keys(_cache);
             for (var i = 0; i < keys.length; i++) {
                 valuesObj[keys[i]] = this.get(keys[i]);
             }
             return valuesObj;
-        };
-
-        /**
-        * @method
-        */
-        this.keys = function keys() {
-            return Object.keys(_cache);
         };
 
     };

@@ -57,6 +57,3 @@ Deletes the cache object with the given key/id, as well as its sessionStorage/lo
 
 Returns an object representation of all cached key/value pairs. Uses `fiji.keys` and `fiji.get` to retrieve a dataset of appropriate freshness.
 
-### fiji.keys()
-
-Returns an array of all cache keys.
