@@ -35,13 +35,14 @@
 
         /** @private {Object} */
         var _options = Object.create(null, {
-            ttl:     { value: (options && options.ttl) ?
+            ttl:     { value: (options && typeof options.ttl !== 'undefined') ?
                               options.ttl : DEFAULT_TTL },
-            longTtl: { value: (options && options.longTtl) ?
+            longTtl: { value: (options && typeof options.longTtl !== 'undefined') ?
                               options.longTtl : DEFAULT_LONG_TTL },
-            ns:      { value: (options && options.ns) ?
+            ns:      { value: (options && typeof options.ns !== 'undefined') ?
                               options.ns : DEFAULT_NS },
-            debug:   { value: options ? !!options.debug : DEFAULT_DEBUG }
+            debug:   { value: (options && typeof options.debug !== 'undefined') ?
+                              !!options.debug : DEFAULT_DEBUG }
         });
 
         /** @private {Object} */
@@ -54,11 +55,11 @@
         }
 
         /**
-        * Validate a well-formed cache/storage object (used internally).
-        * @private
-        * @param {Object} item
-        * @returns {Boolean}
-        */
+         * Validate a well-formed cache/storage object (used internally).
+         * @private
+         * @param {Object} item
+         * @returns {Boolean}
+         */
         var validateItem = function validateItem(item) {
             return (item &&
                     item.hasOwnProperty('id') &&
@@ -72,12 +73,12 @@
         };
 
         /**
-        * Add a TTL value to a date and return a new date to use as expiry value.
-        * @private
-        * @param {Number} [ttl]
-        * @param {Date} [now]
-        * @returns {Date}
-        */
+         * Add a TTL value to a date and return a new date to use as expiry value.
+         * @private
+         * @param {Number} [ttl]
+         * @param {Date} [now]
+         * @returns {Date}
+         */
         var calculateExpiresDate = function calculateExpiresDate(ttl, now) {
             var _now = (typeof now === 'object' && now.toDateString) ? now : new Date();
             var _ttl = ttl || _options.ttl;
@@ -85,13 +86,13 @@
         };
 
         /**
-        * Create a new well-formed cache/storage object (used internally).
-        * @private
-        * @param {String} key
-        * @param {*} value
-        * @param {Boolean} [isLongTerm]
-        * @returns {Object}
-        */
+         * Create a new well-formed cache/storage object (used internally).
+         * @private
+         * @param {String} key
+         * @param {*} value
+         * @param {Boolean} [isLongTerm]
+         * @returns {Object}
+         */
         var createNewItem = function createNewItem(key, value, isLongTerm) {
             var _value = (typeof value === 'undefined') ? null : value;
             var _isLongTerm = !!isLongTerm;
@@ -104,10 +105,11 @@
         };
 
         /**
-        * @private
-        * @param {String} key
-        * @returns {Object}
-        */
+         * Retrieve a value from the cache by the given key. If the resulting output is not a valid cache object, return null.
+         * @private
+         * @param {String} key
+         * @returns {Object}
+         */
         var getCacheItem = function getCacheItem(key) {
             if (!key) {
                 if (_options.debug) console.warn('Please provide a key');
@@ -119,9 +121,10 @@
         };
 
         /**
-        * @private
-        * @param {Object} item
-        */
+         * Update the cache with the given cache item.
+         * @private
+         * @param {Object} item
+         */
         var setCacheItem = function setCacheItem(item) {
             if (!validateItem(item)) {
                 if (_options.debug) console.warn('Item was not set or properly formed: ', item);
@@ -132,9 +135,10 @@
         };
 
         /**
-        * @private
-        * @param {String} key
-        */
+         * Remove an item from the cache by the given key.
+         * @private
+         * @param {String} key
+         */
         var deleteCacheItem = function deleteCacheItem(key) {
             if (!key) {
                 if (_options.debug) console.warn('Please provide a key');
@@ -148,10 +152,11 @@
         };
 
         /**
-        * @private
-        * @param {String} key
-        * @returns {Object}
-        */
+         * Retrieve a cache object from storage by the given key.
+         * @private
+         * @param {String} key
+         * @returns {Object}
+         */
         var getStoreItem = function getStoreItem(key) {
             if (!key) {
                 if (_options.debug) console.warn('Please provide a key');
@@ -174,9 +179,10 @@
         };
 
         /**
-        * @private
-        * @param {Object} item
-        */
+         * Atomically update storage with the given cache item.
+         * @private
+         * @param {Object} item
+         */
         var setStoreItem = function setStoreItem(item) {
             if (!validateItem(item)) {
                 if (_options.debug) console.warn('Item was not set or properly formed: ', item);
@@ -195,9 +201,10 @@
         };
 
         /**
-        * @private
-        * @param {String} key
-        */
+         * Remove an item from storage by the given key.
+         * @private
+         * @param {String} key
+         */
         var deleteStoreItem = function deleteStoreItem(key) {
             if (!key) {
                 if (_options.debug) console.warn('Please provide a key');
@@ -221,10 +228,11 @@
         };
 
         /**
-        * @private
-        * @param {Object} item
-        * @returns {Boolean}
-        */
+         * Determine whether a cache item is expired.
+         * @private
+         * @param {Object} item
+         * @returns {Boolean}
+         */
         var isExpired = function isExpired(item) {
             if (!item) {
                 if (_options.debug) console.warn('Please provide an item');
@@ -237,10 +245,11 @@
         };
 
         /**
-        * @method
-        * @param {String} key
-        * @returns {*}
-        */
+         * Return the value of a cache object with the given key as an ID.
+         * @method
+         * @param {String} key
+         * @returns {*}
+         */
         this.get = function get(key) {
             var now = new Date();
             var storeObj;
@@ -292,11 +301,12 @@
         };
 
         /**
-        * @method
-        * @param {String} key
-        * @param {*} value
-        * @param {Boolean} [isLongTerm]
-        */
+         * Set the value of a cache object, resetting the expire time.
+         * @method
+         * @param {String} key
+         * @param {*} value
+         * @param {Boolean} [isLongTerm]
+         */
         this.set = function set(key, value, isLongTerm) {
             var now = new Date();
             var item = getCacheItem(key);
@@ -332,10 +342,12 @@
         };
 
         /**
-        * @method
-        * @param {String} key
-        * @param {Boolean} [confirmDeleteAll]
-        */
+         * Destroy a cache item by key everywhere. If null is passed as the key and
+         * true is passed as the optional second argument, the cache is completely reset.
+         * @method
+         * @param {String} key
+         * @param {Boolean} [confirmDeleteAll]
+         */
         this.del = function del(key, confirmDeleteAll) {
             // Provide the means to wipe the whole slate clean if desired.
             if (!key && confirmDeleteAll) {
@@ -353,8 +365,10 @@
         };
 
         /**
-        * @method
-        */
+         * Return an object of all key-value pairs in the cache.
+         * @method
+         * @return {Object}
+         */
         this.list = function list() {
             var valuesObj = {};
             var keys = Object.keys(_cache);
