@@ -1,0 +1,31 @@
+{
+  "name": "fiji",
+  "version": "0.0.1",
+  "description": "A tiny sessionStorage/localStorage cache",
+  "main": "fiji.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smt/fiji.git"
+  },
+  "keywords": [
+    "sessionStorage",
+    "localStorage",
+    "cache"
+  ],
+  "author": "Stephen Tudor <smtudor@gmail.com> (http://stephentudor.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smt/fiji/issues"
+  },
+  "homepage": "https://github.com/smt/fiji",
+  "dependencies": {},
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-load-plugins": "^0.7.1",
+    "gulp-rename": "^1.2.0",
+    "gulp-uglify": "^1.0.1"
+  }
+}
