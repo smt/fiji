@@ -2,7 +2,7 @@
   "name": "fiji",
   "version": "0.0.1",
   "description": "A tiny sessionStorage/localStorage cache",
-  "main": "fiji.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,9 +23,13 @@
   "homepage": "https://github.com/smt/fiji",
   "dependencies": {},
   "devDependencies": {
+    "del": "^0.1.3",
     "gulp": "^3.8.10",
+    "gulp-eslint": "^0.1.8",
     "gulp-load-plugins": "^0.7.1",
+    "gulp-preprocess": "^1.1.1",
     "gulp-rename": "^1.2.0",
-    "gulp-uglify": "^1.0.1"
+    "gulp-uglify": "^1.0.1",
+    "package-version": "^0.1.2"
   }
 }

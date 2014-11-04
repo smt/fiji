@@ -1,4 +1,6 @@
-(function (root, factory) {
+/* @echo PKG_INFO */
+;(function (root, factory) {
+    'use strict';
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(function () {
@@ -12,15 +14,24 @@
         root.Fiji = factory();
     }
 }(this, function() {
-    "use strict";
+    'use strict';
 
-    var locSto = window.localStorage;
-    var sesSto = window.sessionStorage;
+    var undef;  // this local intentionally left blank
 
-    var DEFAULT_TTL = 1000*60*60*24;
-    var DEFAULT_LONG_TTL = 1000*60*60*24*30;
+    var locSto = localStorage;
+    var sesSto = sessionStorage;
+
+    var DEFAULT_TTL = 1000 * 60 * 60 * 24;      // a day
+    var DEFAULT_LONG_TTL = DEFAULT_TTL * 30;    // a month
     var DEFAULT_NS = 'Fiji';
-    var DEFAULT_DEBUG = false;
+
+    var isDefined = function isDefined(obj) {
+        return typeof obj !== 'undefined';
+    };
+
+    var isUndefined = function isUndefined(obj) {
+        return typeof obj === 'undefined';
+    };
 
     /**
      * Creates a new Fiji object
@@ -28,31 +39,31 @@
      * @param {Object} [options]
      */
     var Fiji = function Fiji(options) {
+        var self = this;
+
         // Ensure this was called with the 'new' keyword
-        if (!(this instanceof Fiji)) {
+        if (!(self instanceof Fiji)) {
             return new Fiji(options);
         }
 
         /** @private {Object} */
         var _options = Object.create(null, {
-            ttl:     { value: (options && typeof options.ttl !== 'undefined') ?
+            ttl:     { value: (options && isDefined(options.ttl)) ?
                               options.ttl : DEFAULT_TTL },
-            longTtl: { value: (options && typeof options.longTtl !== 'undefined') ?
+            longTtl: { value: (options && isDefined(options.longTtl)) ?
                               options.longTtl : DEFAULT_LONG_TTL },
-            ns:      { value: (options && typeof options.ns !== 'undefined') ?
-                              options.ns : DEFAULT_NS },
-            debug:   { value: (options && typeof options.debug !== 'undefined') ?
-                              !!options.debug : DEFAULT_DEBUG }
+            ns:      { value: (options && isDefined(options.ns)) ?
+                              options.ns : DEFAULT_NS }
         });
 
         /** @private {Object} */
         var _cache = {};
 
-        if (_options.debug) {
-            console.log('Cleaning localStorage and sessionStorage (for testing only)');
-            locSto.removeItem(_options.ns);
-            sesSto.removeItem(_options.ns);
-        }
+        // @if DEBUG
+        console.log('Cleaning localStorage and sessionStorage (for testing only)');
+        locSto.removeItem(_options.ns);
+        sesSto.removeItem(_options.ns);
+        // @endif
 
         /**
          * Validate a well-formed cache/storage object (used internally).
@@ -66,10 +77,10 @@
                     item.hasOwnProperty('value') &&
                     item.hasOwnProperty('expires') &&
                     item.hasOwnProperty('isLongTerm') &&
-            typeof item.id         !== 'undefined' &&
-            typeof item.value      !== 'undefined' &&
-            typeof item.expires    !== 'undefined' &&
-            typeof item.isLongTerm !== 'undefined')
+                    isDefined(item.id) &&
+                    isDefined(item.value) &&
+                    isDefined(item.expires) &&
+                    isDefined(item.isLongTerm));
         };
 
         /**
@@ -94,7 +105,7 @@
          * @returns {Object}
          */
         var createNewItem = function createNewItem(key, value, isLongTerm) {
-            var _value = (typeof value === 'undefined') ? null : value;
+            var _value = isUndefined(value) ? null : value;
             var _isLongTerm = !!isLongTerm;
             return {
                 id: key,
@@ -112,8 +123,10 @@
          */
         var getCacheItem = function getCacheItem(key) {
             if (!key) {
-                if (_options.debug) console.warn('Please provide a key');
-                return;
+                // @if DEBUG
+                console.warn('Please provide a key');
+                // @endif
+                return undef;
             }
 
             var item = _cache[key];
@@ -127,8 +140,10 @@
          */
         var setCacheItem = function setCacheItem(item) {
             if (!validateItem(item)) {
-                if (_options.debug) console.warn('Item was not set or properly formed: ', item);
-                return;
+                // @if DEBUG
+                console.warn('Item was not set or properly formed: ', item);
+                // @endif
+                return undef;
             }
 
             _cache[item.id] = item;
@@ -141,11 +156,13 @@
          */
         var deleteCacheItem = function deleteCacheItem(key) {
             if (!key) {
-                if (_options.debug) console.warn('Please provide a key');
-                return;
+                // @if DEBUG
+                console.warn('Please provide a key');
+                // @endif
+                return undef;
             }
 
-            if (typeof _cache[key] !== 'undefined') {
+            if (isDefined(_cache[key])) {
                 _cache[key] = null;
                 delete _cache[key];
             }
@@ -159,8 +176,10 @@
          */
         var getStoreItem = function getStoreItem(key) {
             if (!key) {
-                if (_options.debug) console.warn('Please provide a key');
-                return;
+                // @if DEBUG
+                console.warn('Please provide a key');
+                // @endif
+                return undef;
             }
 
             var item = _cache[key];
@@ -173,7 +192,7 @@
                 return null;
             }
 
-            item = (typeof storeObj[key] === 'undefined') ? null : storeObj[key];
+            item = isUndefined(storeObj[key]) ? null : storeObj[key];
 
             return item;
         };
@@ -185,8 +204,10 @@
          */
         var setStoreItem = function setStoreItem(item) {
             if (!validateItem(item)) {
-                if (_options.debug) console.warn('Item was not set or properly formed: ', item);
-                return;
+                // @if DEBUG
+                console.warn('Item was not set or properly formed: ', item);
+                // @endif
+                return undef;
             }
 
             var storeMechanism = item.isLongTerm ? locSto : sesSto;
@@ -207,15 +228,19 @@
          */
         var deleteStoreItem = function deleteStoreItem(key) {
             if (!key) {
-                if (_options.debug) console.warn('Please provide a key');
-                return;
+                // @if DEBUG
+                console.warn('Please provide a key');
+                // @endif
+                return undef;
             }
 
             var item = _cache[key];
 
             if (!validateItem(item)) {
-                if (_options.debug) console.warn('Item was not set or properly formed: ', item);
-                return;
+                // @if DEBUG
+                console.warn('Item was not set or properly formed: ', item);
+                // @endif
+                return undef;
             }
 
             var storeMechanism = item.isLongTerm ? locSto : sesSto;
@@ -235,8 +260,10 @@
          */
         var isExpired = function isExpired(item) {
             if (!item) {
-                if (_options.debug) console.warn('Please provide an item');
-                return;
+                // @if DEBUG
+                console.warn('Please provide an item');
+                // @endif
+                return undef;
             }
 
             var now = new Date();
@@ -250,7 +277,7 @@
          * @param {String} key
          * @returns {*}
          */
-        this.get = function get(key) {
+        self.get = function get(key) {
             var now = new Date();
             var storeObj;
             var item = getCacheItem(key);
@@ -265,10 +292,10 @@
                 setCacheItem(storeObj);
                 item = getCacheItem(key);
 
-                if (_options.debug) {
-                    console.log('Initialized new cache item because blank "' + key + '"');
-                    console.table(_cache);
-                }
+                // @if DEBUG
+                console.log('Initialized new cache item because blank "' + key + '"');
+                console.table(_cache);
+                // @endif
 
             } else if (isExpired(item)) {
 
@@ -281,21 +308,23 @@
                 setStoreItem(item);
                 setCacheItem(item);
 
-                if (_options.debug) {
-                    console.log('Updated cache item because expired "' + key + '" (' + item.value + ')');
-                    console.table(_cache);
-                }
+                // @if DEBUG
+                console.log('Updated cache item because expired "' + key + '" (' + item.value + ')');
+                console.table(_cache);
+                // @endif
 
+            // @if DEBUG
             } else {
 
-                if (_options.debug) {
-                    console.log('No cache init or update required, our data is still fresh.');
-                    console.table(_cache);
-                }
+                console.log('No cache init or update required, our data is still fresh.');
+                console.table(_cache);
 
+            // @endif
             }
 
-            if (_options.debug) console.log('It is now ' + now.toString() + ' and _cache[' + key + '] expires at ', item.expires.toString());
+            // @if DEBUG
+            console.log('It is now ' + now.toString() + ' and _cache[' + key + '] expires at ', item.expires.toString());
+            // @endif
 
             return item.value;
         };
@@ -307,26 +336,28 @@
          * @param {*} value
          * @param {Boolean} [isLongTerm]
          */
-        this.set = function set(key, value, isLongTerm) {
+        self.set = function set(key, value, isLongTerm) {
             var now = new Date();
             var item = getCacheItem(key);
 
             if (!item) {
 
                 item = createNewItem(key, value, isLongTerm);
-                if (_options.debug) {
-                    console.log('Initialized new cache item because blank "' + key + '"');
-                    console.table(_cache);
-                }
+
+                // @if DEBUG
+                console.log('Initialized new cache item because blank "' + key + '"');
+                console.table(_cache);
+                // @endif
 
             } else {
 
                 item.value = value;
                 item.expires = calculateExpiresDate((item.isLongTerm ? _options.ttl : _options.longTtl));
-                if (_options.debug) {
-                    console.log('Updated existing cache item "' + key + '" (' + value + ') : ' + now.toString());
-                    console.table(_cache);
-                }
+
+                // @if DEBUG
+                console.log('Updated existing cache item "' + key + '" (' + value + ') : ' + now.toString());
+                console.table(_cache);
+                // @endif
 
             }
 
@@ -348,20 +379,22 @@
          * @param {String} key
          * @param {Boolean} [confirmDeleteAll]
          */
-        this.del = function del(key, confirmDeleteAll) {
+        self.del = function del(key, confirmDeleteAll) {
             // Provide the means to wipe the whole slate clean if desired.
             if (!key && confirmDeleteAll) {
                 sesSto.removeItem(_options.ns);
                 locSto.removeItem(_options.ns);
                 _cache = null;
                 _cache = {};
-                if (_options.debug) console.log('Nuked the Fiji, kaboom!');
+                // @if DEBUG
+                console.log('Nuked the Fiji cache, kaboom!');
+                // @endif
                 return;
             }
 
             // Important to delete store item first so that the storage mechanism, if any, can be determined
-            deleteStoreItem(key)
-            deleteCacheItem(key)
+            deleteStoreItem(key);
+            deleteCacheItem(key);
         };
 
         /**
@@ -369,11 +402,11 @@
          * @method
          * @return {Object}
          */
-        this.list = function list() {
+        self.list = function list() {
             var valuesObj = {};
             var keys = Object.keys(_cache);
             for (var i = 0; i < keys.length; i++) {
-                valuesObj[keys[i]] = this.get(keys[i]);
+                valuesObj[keys[i]] = self.get(keys[i]);
             }
             return valuesObj;
         };
