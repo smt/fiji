@@ -18,19 +18,19 @@
 
     var undef;  // this local intentionally left blank
 
-    var locSto = localStorage;
-    var sesSto = sessionStorage;
+    var locSto = window.localStorage;
+    var sesSto = window.sessionStorage;
 
     var DEFAULT_TTL = 1000 * 60 * 60 * 24;      // a day
     var DEFAULT_LONG_TTL = DEFAULT_TTL * 30;    // a month
     var DEFAULT_NS = 'Fiji';
 
     var isDefined = function isDefined(obj) {
-        return typeof obj !== 'undefined';
+        return obj !== undef;
     };
 
     var isUndefined = function isUndefined(obj) {
-        return typeof obj === 'undefined';
+        return obj === undef;
     };
 
     /**
