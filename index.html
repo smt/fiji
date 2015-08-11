@@ -10,6 +10,9 @@
 <script type="text/javascript">
     var fiji = new Fiji({ttl:2000, longTtl:2000})
 
+    // reset cache
+    fiji.del(null, true);
+
     setTimeout(function () {
         console.log('--- Getting SESSION STORAGE initial poop')
         fiji.get('poop') }, 1000)

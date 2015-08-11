@@ -9,7 +9,7 @@ var del = require('del');
 
 var tsOptions = {
     declarationFiles: false,
-    module: 'commonjs',
+    noExternalResolve: true,
     noImplicitAny: false,
     removeComments: false,
     sortOutput: true,
@@ -23,7 +23,7 @@ var umdOptions = {
 };
 
 gulp.task('default', ['dev'], function() {
-    gulp.watch(['./index.js'], ['dev']);
+    gulp.watch(['./lib/**/*.ts'], ['dev']);
 });
 
 gulp.task('dev', ['typescript:dev', 'info:dev', 'build:dev']);
@@ -35,7 +35,7 @@ gulp.task('clean', function (cb) {
 });
 
 gulp.task('typescript:dev', function () {
-    var tsResult = gulp.src('./index.ts')
+    var tsResult = gulp.src('./lib/**/*.ts')
         .pipe(task.sourcemaps.init())
         .pipe(task.typescript(tsOptions));
 
@@ -47,17 +47,17 @@ gulp.task('typescript:dev', function () {
         .pipe(task.eslint())
         .pipe(task.eslint.format())
         .pipe(task.eslint.failAfterError())
-        .pipe(gulp.dest('./'));
+        .pipe(gulp.dest('./lib'));
 });
 
 gulp.task('typescript', function () {
-    var tsResult = gulp.src('./index.ts')
+    var tsResult = gulp.src('./lib/**/*.ts')
         .pipe(task.typescript(tsOptions));
 
     return tsResult.js
         .pipe(task.eslint())
         .pipe(task.eslint.failAfterError())
-        .pipe(gulp.dest('./'));
+        .pipe(gulp.dest('./lib'));
 });
 
 gulp.task('info:dev', ['typescript:dev'], function (cb) {
@@ -96,8 +96,7 @@ gulp.task('info:min', function (cb) {
 
 gulp.task('build:dev', ['typescript:dev', 'info:dev'], function () {
     var PKG_INFO = 'PKG_INFO';
-    console.log(Object.keys(task));
-    return gulp.src(['./index.dev.js'])
+    return gulp.src(['./lib/**/*.dev.js'])
         .pipe(task.rename(function(path) {
             path.basename = 'fiji';
             path.extname = '.dev.js';
@@ -107,9 +106,9 @@ gulp.task('build:dev', ['typescript:dev', 'info:dev'], function () {
         .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('build', ['typescript', 'info'], function () {
+gulp.task('build', ['typescript', 'clean', 'info'], function () {
     var PKG_INFO = 'PKG_INFO';
-    return gulp.src(['./index.js'])
+    return gulp.src(['./lib/**/*!(.dev).js'])
         .pipe(task.rename(function(path) {
             path.basename = 'fiji';
         }))
@@ -118,9 +117,9 @@ gulp.task('build', ['typescript', 'info'], function () {
         .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('build:min', ['typescript', 'info:min'], function () {
+gulp.task('build:min', ['typescript', 'clean', 'info:min'], function () {
     var PKG_INFO = 'PKG_INFO_MIN';
-    return gulp.src(['./index.js'])
+    return gulp.src(['./lib/**/*!(.dev).js'])
         .pipe(task.rename(function(path) {
             path.basename = 'fiji';
             path.extname = '.min.js';

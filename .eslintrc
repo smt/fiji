@@ -12,6 +12,10 @@
     //     "destructuring": true
     // },
 
+    "globals": {
+        "root": true
+    },
+
     "rules": {
         "camelcase": [1, {"properties": "never"}],
         "eol-last": 0,
