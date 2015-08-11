@@ -1,6 +1,6 @@
 {
   "name": "fiji",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A tiny sessionStorage/localStorage cache",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "localStorage",
     "cache"
   ],
-  "author": "Stephen Tudor <smtudor@gmail.com> (http://stephentudor.com/)",
+  "author": "Stephen Tudor <smt@smt.io> (http://smt.io/)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/smt/fiji/issues"

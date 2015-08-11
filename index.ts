@@ -1,28 +1,85 @@
 'use strict';
-var locSto = window.localStorage;
-var sesSto = window.sessionStorage;
-var DEFAULT_TTL = 1000 * 60 * 60 * 24; // a day
-var DEFAULT_LONG_TTL = DEFAULT_TTL * 30; // a month
-var DEFAULT_NS = 'Fiji';
-var isDefined = function isDefined(obj) {
+
+const locSto = window.localStorage;
+const sesSto = window.sessionStorage;
+
+const DEFAULT_TTL = 1000 * 60 * 60 * 24;      // a day
+const DEFAULT_LONG_TTL = DEFAULT_TTL * 30;    // a month
+const DEFAULT_NS = 'Fiji';
+
+const isDefined = function isDefined(obj) {
     return typeof obj !== 'undefined';
 };
+
+// const isUndefined = function isUndefined(obj) {
+//     return typeof obj === 'undefined';
+// };
+
+interface IFijiOptions {
+    ttl?: number;
+    longTtl?: number;
+    ns?: string;
+}
+
+interface IFijiStatic {
+    new (options?: IFijiOptions);
+}
+
+interface IFiji {
+    get(key: string): string | void;
+    set(key: string, value: string | void, isLongTerm?: boolean): void;
+    del(key: string, confirmDeleteAll?: boolean): void;
+    list(): Object;
+}
+
+interface IItem {
+    id: string;
+    value: string | void;
+    expires: Date;
+    isLongTerm: boolean;
+}
+
+interface IItemFactory {
+    (key: string, value: string | void, isLongTerm?: boolean): IItem;
+}
+
+interface IGetItem {
+    (key: string): IItem;
+}
+
+interface IGetItemValue {
+    (key: string): string;
+}
+
+interface ISetItem {
+    (key: string, value: IItem | string, isLongTerm?): void;
+}
+
+interface IDelItem {
+    (key: string, confirmDeleteAll?: boolean): void;
+}
+
 /**
  * Creates a new Fiji object
  * @class Fiji
  * @param {Object} [options]
  */
-var Fiji = (function () {
-    function Fiji(options) {
+class Fiji implements IFiji {
+    private cache:Object;
+    private options:IFijiOptions;
+
+    constructor(options?: IFijiOptions) {
         /** @private {Object} */
         this.cache = {};
+
         /** @private {Object} */
-        this.options = {
-            ttl: (options && isDefined(options.ttl)) ? options.ttl : DEFAULT_TTL,
+        this.options = <IFijiOptions>{
+            ttl:     (options && isDefined(options.ttl))     ? options.ttl     : DEFAULT_TTL,
             longTtl: (options && isDefined(options.longTtl)) ? options.longTtl : DEFAULT_LONG_TTL,
-            ns: (options && isDefined(options.ns)) ? options.ns : DEFAULT_NS
+            ns:      (options && isDefined(options.ns))      ? options.ns      : DEFAULT_NS
         };
     }
+
     /**
      * Add a TTL value to a date and return a new date to use as expiry value.
      * @private
@@ -30,11 +87,12 @@ var Fiji = (function () {
      * @param {Date} [now]
      * @returns {Date}
      */
-    Fiji.prototype.calculateExpiresDate = function (ttl, now) {
-        var _now = (typeof now === 'object' && now.toDateString) ? now : new Date();
-        var _ttl = ttl || this.options.ttl;
+    private calculateExpiresDate(ttl: number, now?: Date) {
+        const _now: Date = (typeof now === 'object' && now.toDateString) ? now : new Date();
+        const _ttl: number = ttl || this.options.ttl;
         return new Date(_now.valueOf() + _ttl);
-    };
+    }
+
     /**
      * Create a new well-formed cache/storage object (used internally).
      * @private
@@ -43,102 +101,115 @@ var Fiji = (function () {
      * @param {Boolean} [isLongTerm]
      * @returns {Object}
      */
-    Fiji.prototype.createNewItem = function (key, value, isLongTerm) {
-        var ttl = isLongTerm ? this.options.ttl : this.options.longTtl;
-        var expires = this.calculateExpiresDate(ttl);
-        return {
+    private createNewItem <IItemFactory> (key: string, value: string | void, isLongTerm?) {
+        const ttl = isLongTerm ? this.options.ttl : this.options.longTtl;
+        const expires = this.calculateExpiresDate(ttl);
+        return <IItem>{
             id: key,
             value: value || null,
             expires: expires || null,
             isLongTerm: isLongTerm
         };
-    };
+    }
+
     /**
      * Retrieve a value from the cache by the given key. If the resulting output is not a valid cache object, return null.
      * @private
      * @param {String} key
      * @returns {Object}
      */
-    Fiji.prototype.getCacheItem = function (key) {
+    private getCacheItem <IGetItemFunc> (key: string) {
         return this.cache[key] || null;
-    };
+    }
+
     /**
      * Update the cache with the given cache item.
      * @private
      * @param {Object} item
      */
-    Fiji.prototype.setCacheItem = function (key, item) {
+    private setCacheItem <ISetItem> (key: string, item: IItem) {
         this.cache[key] = item;
-    };
+    }
+
     /**
      * Remove an item from the cache by the given key.
      * @private
      * @param {String} key
      */
-    Fiji.prototype.delCacheItem = function (key) {
+    private delCacheItem <IDelItem> (key: string) {
         if (isDefined(this.cache[key])) {
             this.cache[key] = null;
             delete this.cache[key];
         }
-    };
+    }
+
     /**
      * Retrieve a cache object from storage by the given key.
      * @private
      * @param {String} key
      * @returns {Object}
      */
-    Fiji.prototype.getStoreItem = function (key) {
+    private getStoreItem <IGetItemFunc> (key: string) {
         // default to session storage
-        var storeMechanism = this.cache[key].isLongTerm ? locSto : sesSto;
-        var storeObj = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
+        const storeMechanism = this.cache[key].isLongTerm ? locSto : sesSto;
+        const storeObj: Object = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
+
         return storeObj[key] || null;
-    };
+    }
+
     /**
      * Atomically update storage with the given cache item.
      * @private
      * @param {Object} item
      */
-    Fiji.prototype.setStoreItem = function (key, item) {
-        var storeMechanism = item.isLongTerm ? locSto : sesSto;
-        var storeObj = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
+    private setStoreItem <ISetItem> (key: string, item: IItem) {
+        const storeMechanism = item.isLongTerm ? locSto : sesSto;
+        let storeObj: Object = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
+
         storeObj[key] = item;
+
         storeMechanism.setItem(this.options.ns, JSON.stringify(storeObj));
-    };
+    }
+
     /**
      * Remove an item from storage by the given key.
      * @private
      * @param {String} key
      */
-    Fiji.prototype.delStoreItem = function (key) {
-        var storeMechanism = this.cache[key].isLongTerm ? locSto : sesSto;
-        var storeObj = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
+    private delStoreItem <IDelItem> (key: string) {
+        const storeMechanism = this.cache[key].isLongTerm ? locSto : sesSto;
+        let storeObj: Object = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
+
         if (storeObj[key]) {
             storeObj[key] = null;
             delete storeObj[key];
             storeMechanism.setItem(this.options.ns, JSON.stringify(storeObj));
         }
-    };
+    }
+
     /**
      * Determine whether a cache item is expired.
      * @private
      * @param {Object} item
      * @returns {Boolean}
      */
-    Fiji.prototype.isExpired = function (item) {
-        var now = new Date();
+    private isExpired(item: IItem) {
+        const now = new Date();
         return new Date(item.expires.valueOf()) < now;
-    };
+    }
+
     /**
      * Return the value of a cache object with the given key as an ID.
      * @method
      * @param {String} key
      * @returns {*}
      */
-    Fiji.prototype.get = function (key) {
+    get <IGetItemValue> (key: string) {
         // const now = new Date();
-        var item = this.getCacheItem(key);
-        var storeObj;
-        var ttl;
+        let item = this.getCacheItem(key);
+        let storeObj;
+        let ttl;
+
         if (!item) {
             // prime cache
             storeObj = this.getStoreItem(key);
@@ -147,8 +218,7 @@ var Fiji = (function () {
             }
             this.setCacheItem(key, storeObj);
             item = this.getCacheItem(key);
-        }
-        else if (this.isExpired(item)) {
+        } else if (this.isExpired(item)) {
             // refresh expired cached item from storage
             storeObj = this.getStoreItem(key);
             if (storeObj) {
@@ -159,8 +229,10 @@ var Fiji = (function () {
             this.setStoreItem(key, item);
             this.setCacheItem(key, item);
         }
+
         return item.value;
-    };
+    }
+
     /**
      * Set the value of a cache object, resetting the expire time.
      * @method
@@ -170,14 +242,16 @@ var Fiji = (function () {
      *                               Defaults to false(y) for sessionStorage.
      *                               Pass true to save to localStorage instead.
      */
-    Fiji.prototype.set = function (key, value, isLongTerm) {
+    set <ISetItem> (key: string, value: string, isLongTerm?: boolean) {
         // const now: Date = new Date();
-        var item = this.getCacheItem(key) ||
-            this.createNewItem(key, null, isLongTerm);
-        var ttl;
+        let item: IItem = this.getCacheItem(key) ||
+                          this.createNewItem(key, null, isLongTerm);
+        let ttl: number;
+
         item.value = value;
         ttl = item.isLongTerm ? this.options.ttl : this.options.longTtl;
         item.expires = this.calculateExpiresDate(ttl);
+
         // Ensure we never save the same key to two different types of storage.
         // If a different isLongTerm option is passed, delete the existing
         // item from the current store mechanism before saving to the new one.
@@ -185,9 +259,11 @@ var Fiji = (function () {
             this.delStoreItem(key);
             item.isLongTerm = isLongTerm;
         }
+
         this.setStoreItem(key, item);
         this.setCacheItem(key, item);
-    };
+    }
+
     /**
      * Destroy a cache item by key everywhere. If null is passed as the key and
      * true is passed as the optional second argument, the cache is reset.
@@ -197,7 +273,7 @@ var Fiji = (function () {
      *                                     optional param must be true to
      *                                     delete the cache data.
      */
-    Fiji.prototype.del = function (key, confirmDeleteAll) {
+    del <IDelItem> (key: string, confirmDeleteAll?: boolean) {
         // Provide the means to wipe the whole slate clean if desired.
         if (!key && confirmDeleteAll) {
             sesSto.removeItem(this.options.ns);
@@ -206,24 +282,26 @@ var Fiji = (function () {
             this.cache = {};
             return;
         }
+
         // Important to delete store item first so that the storage mechanism, if any, can be determined
         this.delStoreItem(key);
         this.delCacheItem(key);
-    };
+    }
+
     /**
      * Return an object of all key-value pairs in the cache.
      * @method
      * @return {Object}
      */
-    Fiji.prototype.list = function () {
-        var _this = this;
-        var keys = Object.keys(this.cache);
-        return keys.reduce(function (obj, key) {
-            obj[key] = _this.get(key);
+    list() {
+        const keys = Object.keys(this.cache);
+        return keys.reduce((obj, key) => {
+            obj[key] = this.get(key);
             return obj;
         }, {});
-    };
-    return Fiji;
-})();
-var fiji = Fiji;
-exports.Fiji = fiji;
+    }
+}
+
+const fiji: IFijiStatic = Fiji;
+
+export { fiji as Fiji };

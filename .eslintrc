@@ -1,0 +1,20 @@
+{
+    "env": {
+        "browser": true,
+        "node": true,
+        "phantomjs": true,
+        "es6": false
+    },
+
+    // "ecmaFeatures": {
+    //     "blockBindings": true,
+    //     "classes": true,
+    //     "destructuring": true
+    // },
+
+    "rules": {
+        "no-shadow": 0,
+        "no-underscore-dangle": 0,
+        "quotes": [2, "single"],
+    }
+}
