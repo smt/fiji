@@ -1,5 +1,3 @@
-/* @echo PKG_INFO */
-
 'use strict';
 
 const locSto = window.localStorage;
@@ -10,10 +8,14 @@ const DEFAULT_LONG_TTL = DEFAULT_TTL * 30;    // a month
 const DEFAULT_NS = 'Fiji';
 
 const isDefined = function isDefined(obj) {
+    'use strict';
+
     return typeof obj !== 'undefined';
 };
 
 // const isUndefined = function isUndefined(obj) {
+//     'use strict';
+//
 //     return typeof obj === 'undefined';
 // };
 
@@ -49,6 +51,8 @@ interface IGetItem {
     (key: string): IItem;
 }
 
+/* @echo PKG_INFO */
+
 interface IGetItemValue {
     (key: string): string;
 }
@@ -71,6 +75,8 @@ class Fiji implements IFiji {
     private options:IFijiOptions;
 
     constructor(options?: IFijiOptions) {
+        'use strict';
+
         /** @private {Object} */
         this.cache = {};
 
@@ -90,6 +96,8 @@ class Fiji implements IFiji {
      * @returns {Date}
      */
     private calculateExpiresDate(ttl: number, now?: Date) {
+        'use strict';
+
         const _now: Date = (typeof now === 'object' && now.toDateString) ? now : new Date();
         const _ttl: number = ttl || this.options.ttl;
         return new Date(_now.valueOf() + _ttl);
@@ -104,6 +112,8 @@ class Fiji implements IFiji {
      * @returns {Object}
      */
     private createNewItem <IItemFactory> (key: string, value: string | void, isLongTerm?) {
+        'use strict';
+
         const ttl = isLongTerm ? this.options.ttl : this.options.longTtl;
         const expires = this.calculateExpiresDate(ttl);
         return <IItem>{
@@ -121,6 +131,8 @@ class Fiji implements IFiji {
      * @returns {Object}
      */
     private getCacheItem <IGetItemFunc> (key: string) {
+        'use strict';
+
         return this.cache[key] || null;
     }
 
@@ -130,6 +142,8 @@ class Fiji implements IFiji {
      * @param {Object} item
      */
     private setCacheItem <ISetItem> (key: string, item: IItem) {
+        'use strict';
+
         this.cache[key] = item;
     }
 
@@ -139,6 +153,8 @@ class Fiji implements IFiji {
      * @param {String} key
      */
     private delCacheItem <IDelItem> (key: string) {
+        'use strict';
+
         if (isDefined(this.cache[key])) {
             this.cache[key] = null;
             delete this.cache[key];
@@ -152,6 +168,8 @@ class Fiji implements IFiji {
      * @returns {Object}
      */
     private getStoreItem <IGetItemFunc> (key: string) {
+        'use strict';
+
         // default to session storage
         const storeMechanism = this.cache[key].isLongTerm ? locSto : sesSto;
         const storeObj: Object = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
@@ -165,6 +183,8 @@ class Fiji implements IFiji {
      * @param {Object} item
      */
     private setStoreItem <ISetItem> (key: string, item: IItem) {
+        'use strict';
+
         const storeMechanism = item.isLongTerm ? locSto : sesSto;
         let storeObj: Object = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
 
@@ -179,6 +199,8 @@ class Fiji implements IFiji {
      * @param {String} key
      */
     private delStoreItem <IDelItem> (key: string) {
+        'use strict';
+
         const storeMechanism = this.cache[key].isLongTerm ? locSto : sesSto;
         let storeObj: Object = JSON.parse(storeMechanism.getItem(this.options.ns)) || {};
 
@@ -196,6 +218,8 @@ class Fiji implements IFiji {
      * @returns {Boolean}
      */
     private isExpired(item: IItem) {
+        'use strict';
+
         const now = new Date();
         return new Date(item.expires.valueOf()) < now;
     }
@@ -207,6 +231,8 @@ class Fiji implements IFiji {
      * @returns {*}
      */
     get <IGetItemValue> (key: string) {
+        'use strict';
+
         // const now = new Date();
         let item = this.getCacheItem(key);
         let storeObj;
@@ -245,6 +271,8 @@ class Fiji implements IFiji {
      *                               Pass true to save to localStorage instead.
      */
     set <ISetItem> (key: string, value: string, isLongTerm?: boolean) {
+        'use strict';
+
         // const now: Date = new Date();
         let item: IItem = this.getCacheItem(key) ||
                           this.createNewItem(key, null, isLongTerm);
@@ -276,6 +304,8 @@ class Fiji implements IFiji {
      *                                     delete the cache data.
      */
     del <IDelItem> (key: string, confirmDeleteAll?: boolean) {
+        'use strict';
+
         // Provide the means to wipe the whole slate clean if desired.
         if (!key && confirmDeleteAll) {
             sesSto.removeItem(this.options.ns);
@@ -296,6 +326,8 @@ class Fiji implements IFiji {
      * @return {Object}
      */
     list() {
+        'use strict';
+
         const keys = Object.keys(this.cache);
         return keys.reduce((obj, key) => {
             obj[key] = this.get(key);
@@ -304,6 +336,6 @@ class Fiji implements IFiji {
     }
 }
 
-const fiji: IFijiStatic = Fiji;
+// const fiji: IFijiStatic = Fiji;
 
-export { fiji as Fiji };
+// export { fiji as Fiji };

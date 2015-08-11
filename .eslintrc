@@ -13,9 +13,14 @@
     // },
 
     "rules": {
+        "camelcase": [1, {"properties": "never"}],
+        "eol-last": 0,
         "no-debugger": 1,
+        "no-extra-strict": 0,
         "no-shadow": 0,
         "no-underscore-dangle": 0,
+        "no-unused-vars": 1,
         "quotes": [2, "single", "avoid-escape"],
+        "strict": [0, "global"],
     }
 }
