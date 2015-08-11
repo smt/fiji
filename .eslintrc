@@ -13,8 +13,9 @@
     // },
 
     "rules": {
+        "no-debugger": 1,
         "no-shadow": 0,
         "no-underscore-dangle": 0,
-        "quotes": [2, "single"],
+        "quotes": [2, "single", "avoid-escape"],
     }
 }

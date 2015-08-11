@@ -1,3 +1,5 @@
+/* @echo PKG_INFO */
+
 'use strict';
 
 const locSto = window.localStorage;
